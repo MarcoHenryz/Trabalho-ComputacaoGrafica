@@ -1,1 +1,0 @@
-/usr/bin/c++ CMakeFiles/main.dir/src/sources/Camera.cpp.o CMakeFiles/main.dir/src/sources/Shader.cpp.o CMakeFiles/main.dir/src/sources/glad.c.o CMakeFiles/main.dir/src/sources/main.cpp.o CMakeFiles/main.dir/src/sources/stb.cpp.o -o main  /usr/lib/x86_64-linux-gnu/libGL.so /usr/lib/x86_64-linux-gnu/libglfw.so.3.3 
