@@ -6,8 +6,12 @@
 
 class WorldGenerator {
 public:
-  std::vector<glm::vec3> GenerateFlatChunk() const;
-  // TODO: replace with procedural world generation (noise, biomes, structures)
+  struct WorldIslands {
+    std::vector<glm::vec3> grassBlocks;
+    std::vector<glm::vec3> dirtBlocks;
+  };
+
+  WorldIslands GenerateTwoIslands() const;
 };
 
 #endif

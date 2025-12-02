@@ -1,32 +1,87 @@
 #include "../headers/Renderer.hpp"
 #include "../headers/glad/glad.h"
 #include "../headers/glm/gtc/matrix_transform.hpp"
+#include <string>
 
 namespace {
+// Atlas 80x32, cada face 16x16
+// grama cima   - grama lado   - terra  - pedra lisa - nada
+// madeira lado - madeira cima - folhas - carvão     - nada
+constexpr float ATLAS_W = 80.0f;
+constexpr float ATLAS_H = 32.0f;
+constexpr float TILE_W_PX = 16.0f;
+constexpr float TILE_H_PX = 16.0f;
+
+struct RegionUV {
+  glm::vec2 min;
+  glm::vec2 max;
+};
+
+RegionUV RegionForTile(int tileIndex) {
+  const int col = tileIndex % 5;
+  const int row = tileIndex / 5;
+  const float left = col * TILE_W_PX;
+  const float top = row * TILE_H_PX;
+  const float right = left + TILE_W_PX;
+  const float bottom = top + TILE_H_PX;
+
+  const float u0 = left / ATLAS_W;
+  const float u1 = right / ATLAS_W;
+  const float v0 = 1.0f - (bottom / ATLAS_H); // origem em cima
+  const float v1 = 1.0f - (top / ATLAS_H);
+
+  return RegionUV{glm::vec2(u0, v0), glm::vec2(u1, v1)};
+}
+
+// trás, frente, esquerda, direita, baixo, cima
 const float VERTICES[] = {
-    -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.5f,  -0.5f, -0.5f, 1.0f, 0.0f,
-    0.5f,  0.5f,  -0.5f, 1.0f, 1.0f, 0.5f,  0.5f,  -0.5f, 1.0f, 1.0f,
-    -0.5f, 0.5f,  -0.5f, 0.0f, 1.0f, -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
+    // trás (z -0.5) face 0
+    -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
+     0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
+     0.5f,  0.5f, -0.5f, 1.0f, 1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f, 1.0f, 1.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+    -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
 
-    -0.5f, -0.5f, 0.5f,  0.0f, 0.0f, 0.5f,  -0.5f, 0.5f,  1.0f, 0.0f,
-    0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-    -0.5f, 0.5f,  0.5f,  0.0f, 1.0f, -0.5f, -0.5f, 0.5f,  0.0f, 0.0f,
+    // frente (z +0.5) face 1
+    -0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
+     0.5f, -0.5f,  0.5f, 1.0f, 0.0f, 1.0f,
+     0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f,
+    -0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
 
-    -0.5f, 0.5f,  0.5f,  1.0f, 0.0f, -0.5f, 0.5f,  -0.5f, 1.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f, 0.0f, 1.0f, -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-    -0.5f, -0.5f, 0.5f,  0.0f, 0.0f, -0.5f, 0.5f,  0.5f,  1.0f, 0.0f,
+    // esquerda (x -0.5) face 2
+    -0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 2.0f,
+    -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 2.0f,
+    -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 2.0f,
+    -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 2.0f,
+    -0.5f, -0.5f,  0.5f, 1.0f, 0.0f, 2.0f,
+    -0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 2.0f,
 
-    0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 0.5f,  0.5f,  -0.5f, 1.0f, 1.0f,
-    0.5f,  -0.5f, -0.5f, 0.0f, 1.0f, 0.5f,  -0.5f, -0.5f, 0.0f, 1.0f,
-    0.5f,  -0.5f, 0.5f,  0.0f, 0.0f, 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    // direita (x +0.5) face 3
+     0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 3.0f,
+     0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 3.0f,
+     0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 3.0f,
+     0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 3.0f,
+     0.5f, -0.5f,  0.5f, 1.0f, 0.0f, 3.0f,
+     0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 3.0f,
 
-    -0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 0.5f,  -0.5f, -0.5f, 1.0f, 1.0f,
-    0.5f,  -0.5f, 0.5f,  1.0f, 0.0f, 0.5f,  -0.5f, 0.5f,  1.0f, 0.0f,
-    -0.5f, -0.5f, 0.5f,  0.0f, 0.0f, -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
+    // baixo (y -0.5) face 4
+    -0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 4.0f,
+     0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 4.0f,
+     0.5f, -0.5f,  0.5f, 1.0f, 0.0f, 4.0f,
+     0.5f, -0.5f,  0.5f, 1.0f, 0.0f, 4.0f,
+    -0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 4.0f,
+    -0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 4.0f,
 
-    -0.5f, 0.5f,  -0.5f, 0.0f, 1.0f, 0.5f,  0.5f,  -0.5f, 1.0f, 1.0f,
-    0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-    -0.5f, 0.5f,  0.5f,  0.0f, 0.0f, -0.5f, 0.5f,  -0.5f, 0.0f, 1.0f};
+    // cima (y +0.5) face 5
+    -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 5.0f,
+     0.5f,  0.5f, -0.5f, 1.0f, 1.0f, 5.0f,
+     0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 5.0f,
+     0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 5.0f,
+    -0.5f,  0.5f,  0.5f, 0.0f, 0.0f, 5.0f,
+    -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 5.0f};
 } // namespace
 
 Renderer::Renderer() : VBO(0), VAO(0) {}
@@ -36,13 +91,21 @@ Renderer::~Renderer() { Cleanup(); }
 void Renderer::Initialize() { SetupBuffers(); }
 
 void Renderer::Render(const std::vector<glm::vec3> &cubePositions,
-                      Shader &shader, const Camera &camera,
-                      unsigned int texture, unsigned int screenWidth,
-                      unsigned int screenHeight) {
+                      const Block &block, Shader &shader, const Camera &camera,
+                      unsigned int screenWidth, unsigned int screenHeight) {
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, texture);
+  glBindTexture(GL_TEXTURE_2D, block.GetTextureId());
 
   shader.use();
+
+  // define qual parte da textura usar em cada face
+  const auto &faces = block.GetFaceTileIndices();
+  for (size_t i = 0; i < faces.size(); ++i) {
+    const auto uv = RegionForTile(faces[i]);
+    shader.setVec2("faceOffsets[" + std::to_string(i) + "]", uv.min);
+    shader.setVec2("faceScales[" + std::to_string(i) + "]",
+                   uv.max - uv.min);
+  }
 
   glm::mat4 projection = glm::perspective(
       glm::radians(camera.Zoom),
@@ -89,13 +152,17 @@ void Renderer::SetupBuffers() {
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
   glBufferData(GL_ARRAY_BUFFER, sizeof(VERTICES), VERTICES, GL_STATIC_DRAW);
 
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float),
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float),
                         (void *)0);
   glEnableVertexAttribArray(0);
 
-  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float),
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(float),
                         (void *)(3 * sizeof(float)));
   glEnableVertexAttribArray(1);
+
+  glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float),
+                        (void *)(5 * sizeof(float)));
+  glEnableVertexAttribArray(2);
 
   glBindVertexArray(0);
 }

@@ -6,13 +6,13 @@
 
 class GrassBlock : public Block {
 public:
-  GrassBlock();
+  explicit GrassBlock(unsigned int texture);
   const std::string &GetName() const override;
   unsigned int GetTextureId() const override;
+  const std::array<int, 6> &GetFaceTileIndices() const override;
 
 private:
   std::string name = "grass";
-  // TODO: assign grass texture when the asset and binding logic are available
 };
 
 #endif

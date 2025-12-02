@@ -3,8 +3,7 @@
 
 class TextureLoader {
 public:
-  unsigned int LoadDirtTexture() const;
-  // TODO: centralize atlas/array texture management for every block type
+  unsigned int LoadAtlasTexture() const;
 };
 
 #endif

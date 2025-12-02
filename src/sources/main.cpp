@@ -20,7 +20,7 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 int main() {
-  // initialize and configure glfw
+  // inicializar glfw
   glfwInit();
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -30,11 +30,11 @@ int main() {
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-  // glfw window creation
+  // criar janela glfw
   GLFWwindow *window =
       glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Block Sandbox", NULL, NULL);
   if (window == NULL) {
-    std::cout << "Failed to create GLFW window" << std::endl;
+    std::cout << "Erro ao criar janela GLFW" << std::endl;
     glfwTerminate();
     return -1;
   }
@@ -44,22 +44,22 @@ int main() {
   Player player(SCR_WIDTH, SCR_HEIGHT);
   player.BindCallbacks(window);
 
-  // capture mouse with glfw
+  // capturar mouse com glfw
   glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-  // glad: load all OpenGL function pointers
+  // glad: carregar todos os ponteiros de função OpenGL
   if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-    std::cout << "Failed to initialize GLAD" << std::endl;
+    std::cout << "Falha ao inicializar GLAD" << std::endl;
     return -1;
   }
 
-  // configure global OpenGL state
-  glEnable(GL_DEPTH_TEST); // render from back to front
+  // configurar estado global do OpenGL
+  glEnable(GL_DEPTH_TEST); // renderizar de trás para frente
 
   Light light;
   light.SetupSunLight();
 
-  // build and compile our shaders program
+  // compilar e linkar nosso shaders
   Shader shader("src/resources/shaders/shader.vs",
                 "src/resources/shaders/shader.fs");
 
@@ -67,20 +67,20 @@ int main() {
   renderer.Initialize();
 
   WorldGenerator worldGenerator;
-  auto cubePositions = worldGenerator.GenerateFlatChunk();
+  // dois grupos simples de blocos (ilha de grama e ilha de terra)
+  auto islands = worldGenerator.GenerateTwoIslands();
 
   TextureLoader textureLoader;
-  unsigned int dirt_texture = textureLoader.LoadDirtTexture();
+  unsigned int atlasTexture = textureLoader.LoadAtlasTexture();
 
-  DirtBlock dirtBlock(dirt_texture);
-  GrassBlock grassBlock;
-  (void)grassBlock;
-  Chunk chunk(cubePositions, dirtBlock);
+  GrassBlock grassBlock(atlasTexture);
+  DirtBlock dirtBlock(atlasTexture);
+  Chunk grassChunk(islands.grassBlocks, grassBlock);
+  Chunk dirtChunk(islands.dirtBlocks, dirtBlock);
 
-  // tell opengl for each sampler to which texture unit it belongs to
+  // setar texture de cada sampler
   shader.use();
-  glUniform1i(glGetUniformLocation(shader.ID, "dirt_texture"), 0);
-  shader.setInt("dirt_texture", 0);
+  shader.setInt("block_texture", 0);
 
   // render loop
   while (!glfwWindowShouldClose(window)) {
@@ -91,18 +91,20 @@ int main() {
     glClearColor(0.53f, 0.81f, 0.92f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    renderer.Render(chunk.GetBlockPositions(), shader, player.GetCamera(),
-                    chunk.GetBlockType().GetTextureId(), SCR_WIDTH, SCR_HEIGHT);
+    renderer.Render(grassChunk.GetBlockPositions(), grassChunk.GetBlockType(),
+                    shader, player.GetCamera(), SCR_WIDTH, SCR_HEIGHT);
+    renderer.Render(dirtChunk.GetBlockPositions(), dirtChunk.GetBlockType(),
+                    shader, player.GetCamera(), SCR_WIDTH, SCR_HEIGHT);
 
-    // glfw: swap buffers and poll IO events (keys pressed/released, mouse move)
+    // glfw: swap buffers e IO
     glfwSwapBuffers(window);
     glfwPollEvents();
   }
 
-  // de-allocate all resources once they've outlived their purpose:
+  // limpar recursos para encerrar
   renderer.Cleanup();
 
-  // glfw: terminate, clearing all previously allocated GLFW resources.
+  // encerra glfw de vez
   glfwTerminate();
   return 0;
 }

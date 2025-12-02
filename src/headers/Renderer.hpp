@@ -1,6 +1,7 @@
 #ifndef RENDERER_HPP
 #define RENDERER_HPP
 
+#include "Block.hpp"
 #include "Camera.hpp"
 #include "Shader.hpp"
 #include "glm/glm.hpp"
@@ -13,8 +14,8 @@ public:
   ~Renderer();
 
   void Initialize();
-  void Render(const std::vector<glm::vec3> &cubePositions, Shader &shader,
-              const Camera &camera, unsigned int texture,
+  void Render(const std::vector<glm::vec3> &cubePositions, const Block &block,
+              Shader &shader, const Camera &camera,
               unsigned int screenWidth, unsigned int screenHeight);
   void Cleanup();
 
