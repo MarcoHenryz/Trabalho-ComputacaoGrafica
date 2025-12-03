@@ -14,6 +14,9 @@
 #include "../headers/Shader.hpp"
 #include "../headers/TextureLoader.hpp"
 #include "../headers/WorldGenerator.hpp"
+#include "../headers/StoneBlock.hpp"
+#include "../headers/WoodBlock.hpp"
+#include "../headers/LeafBlock.hpp"
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -55,11 +58,13 @@ int main() {
 
   // configurar estado global do OpenGL
   glEnable(GL_DEPTH_TEST); // renderizar de trás para frente
+  glEnable(GL_BLEND);      // transparência pras folhas
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   Light light;
   light.SetupSunLight();
 
-  // compilar e linkar nosso shaders
+  // compilar e linkar shaders
   Shader shader("src/resources/shaders/shader.vs",
                 "src/resources/shaders/shader.fs");
 
@@ -67,22 +72,30 @@ int main() {
   renderer.Initialize();
 
   WorldGenerator worldGenerator;
-  // dois grupos simples de blocos (ilha de grama e ilha de terra)
+  
+  // blocos exemplo
   auto islands = worldGenerator.GenerateTwoIslands();
 
   TextureLoader textureLoader;
   unsigned int atlasTexture = textureLoader.LoadAtlasTexture();
 
+  // todos os blocos usam a mesma imagem pra tentar otimizar
   GrassBlock grassBlock(atlasTexture);
   DirtBlock dirtBlock(atlasTexture);
+  StoneBlock stoneBlock(atlasTexture);
+  WoodBlock woodBlock(atlasTexture);
+  LeafBlock leafBlock(atlasTexture);
   Chunk grassChunk(islands.grassBlocks, grassBlock);
   Chunk dirtChunk(islands.dirtBlocks, dirtBlock);
+  Chunk stoneChunk(islands.stoneBlocks, stoneBlock);
+  Chunk woodChunk(islands.woodBlocks, woodBlock);
+  Chunk leafChunk(islands.leafBlocks, leafBlock);
 
   // setar texture de cada sampler
   shader.use();
   shader.setInt("block_texture", 0);
 
-  // render loop
+  // loop principal
   while (!glfwWindowShouldClose(window)) {
     player.UpdateFrameTime();
     player.ProcessInput(window);
@@ -94,6 +107,12 @@ int main() {
     renderer.Render(grassChunk.GetBlockPositions(), grassChunk.GetBlockType(),
                     shader, player.GetCamera(), SCR_WIDTH, SCR_HEIGHT);
     renderer.Render(dirtChunk.GetBlockPositions(), dirtChunk.GetBlockType(),
+                    shader, player.GetCamera(), SCR_WIDTH, SCR_HEIGHT);
+    renderer.Render(stoneChunk.GetBlockPositions(), stoneChunk.GetBlockType(),
+                    shader, player.GetCamera(), SCR_WIDTH, SCR_HEIGHT);
+    renderer.Render(woodChunk.GetBlockPositions(), woodChunk.GetBlockType(),
+                    shader, player.GetCamera(), SCR_WIDTH, SCR_HEIGHT);
+    renderer.Render(leafChunk.GetBlockPositions(), leafChunk.GetBlockType(),
                     shader, player.GetCamera(), SCR_WIDTH, SCR_HEIGHT);
 
     // glfw: swap buffers e IO

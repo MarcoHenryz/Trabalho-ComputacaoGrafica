@@ -9,6 +9,9 @@ public:
   struct WorldIslands {
     std::vector<glm::vec3> grassBlocks;
     std::vector<glm::vec3> dirtBlocks;
+    std::vector<glm::vec3> stoneBlocks;
+    std::vector<glm::vec3> woodBlocks;
+    std::vector<glm::vec3> leafBlocks;
   };
 
   WorldIslands GenerateTwoIslands() const;

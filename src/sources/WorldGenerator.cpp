@@ -12,10 +12,19 @@ WorldGenerator::WorldIslands WorldGenerator::GenerateTwoIslands() const {
   };
 
   // exemplo de grama
-  addFlatIsland(islands.grassBlocks, glm::vec3(-4.0f, -2.0f, -4.0f), 4);
+  addFlatIsland(islands.grassBlocks, glm::vec3(-4.0f, -2.0f, -4.0f), 3);
 
   // exemplo de terra
   addFlatIsland(islands.dirtBlocks, glm::vec3(3.0f, -2.0f, 3.0f), 3);
+
+  // exemplo de pedra
+  addFlatIsland(islands.stoneBlocks, glm::vec3(-8.0f, -2.0f, 6.0f), 3);
+
+  // exemplo tronco
+  addFlatIsland(islands.woodBlocks, glm::vec3(6.0f, -2.0f, -6.0f), 3);
+
+  // exemplo folhas
+  addFlatIsland(islands.leafBlocks, glm::vec3(0.0f, -2.0f, 8.0f), 3);
 
   return islands;
 }

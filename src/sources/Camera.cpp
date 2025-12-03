@@ -1,13 +1,13 @@
 #include "../headers/Camera.hpp"
 
-// Default camera values
+// valores padrão da câmera
 const float YAW = -90.0f;
 const float PITCH = 0.0f;
 const float SPEED = 5.0f;
 const float SENSITIVITY = 0.1f;
 const float ZOOM = 45.0f;
 
-// constructor with vectors
+// construtor com vectors
 Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch)
     : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED),
       MouseSensitivity(SENSITIVITY), Zoom(ZOOM) {
@@ -18,7 +18,7 @@ Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch)
   updateCameraVectors();
 }
 
-// constructor with scalar values
+// constructor com floats
 Camera::Camera(float posX, float posY, float posZ, float upX, float upY,
                float upZ, float yaw, float pitch)
     : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED),
@@ -30,12 +30,12 @@ Camera::Camera(float posX, float posY, float posZ, float upX, float upY,
   updateCameraVectors();
 }
 
-// returns the view matrix calculated using Euler Angles and the LookAt Matrix
+// retorna a view matrix calculada com angulos de euler + matrix lookat
 glm::mat4 Camera::GetViewMatrix() const {
   return glm::lookAt(Position, Position + Front, Up);
 }
 
-// Accepts input in ENUM (to abstract it from windowing systems)
+// enum de input de teclado para movimentação
 void Camera::ProcessKeyboard(Camera_Movement direction, float deltaTime) {
   float velocity = MovementSpeed * deltaTime;
   if (direction == FORWARD)
@@ -56,7 +56,7 @@ void Camera::ProcessMouseMovement(float xoffset, float yoffset,
   Yaw += xoffset;
   Pitch += yoffset;
 
-  // make sure that when pitch is out of bounds, screen doesn't get flipped
+  // não deixa a camera virar de ponta cabeça
   if (constrainPitch) {
     if (Pitch > 89.0f)
       Pitch = 89.0f;
@@ -64,7 +64,6 @@ void Camera::ProcessMouseMovement(float xoffset, float yoffset,
       Pitch = -89.0f;
   }
 
-  // update Front, Right and Up Vectors using the updated Euler angles
   Camera::updateCameraVectors();
 }
 
@@ -76,7 +75,7 @@ void Camera::ProcessMouseScroll(float yoffset) {
     Zoom = 45.0f;
 }
 
-// calculates the front vector from the Camera's (updated) Euler Angles
+// calcula front vector atualizado da câmera
 void Camera::updateCameraVectors() {
   glm::vec3 front;
   front.x = cos(glm::radians(Yaw)) * cos(glm::radians(Pitch));
@@ -84,8 +83,7 @@ void Camera::updateCameraVectors() {
   front.z = sin(glm::radians(Yaw)) * cos(glm::radians(Pitch));
   Front = glm::normalize(front);
 
-  // also re-calculate the Right and Up vector
-  // normalize the vectors, because of floating point imprecision
+  // recalcula e normaliza vetors (floating point precision)
   Right = glm::normalize(glm::cross(Front, WorldUp));
   Up = glm::normalize(glm::cross(Right, Front));
 }

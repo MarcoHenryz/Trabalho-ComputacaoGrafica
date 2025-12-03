@@ -98,7 +98,7 @@ void Renderer::Render(const std::vector<glm::vec3> &cubePositions,
 
   shader.use();
 
-  // define qual parte da textura usar em cada face
+  // Aqui escolho a fatia do atlas para cada face, dependendo do bloco.
   const auto &faces = block.GetFaceTileIndices();
   for (size_t i = 0; i < faces.size(); ++i) {
     const auto uv = RegionForTile(faces[i]);
@@ -152,14 +152,17 @@ void Renderer::SetupBuffers() {
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
   glBufferData(GL_ARRAY_BUFFER, sizeof(VERTICES), VERTICES, GL_STATIC_DRAW);
 
+  // posição
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float),
                         (void *)0);
   glEnableVertexAttribArray(0);
 
+  // coordenada normalizada
   glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(float),
                         (void *)(3 * sizeof(float)));
   glEnableVertexAttribArray(1);
 
+  // id da face (0-5) para buscar no atlas
   glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float),
                         (void *)(5 * sizeof(float)));
   glEnableVertexAttribArray(2);

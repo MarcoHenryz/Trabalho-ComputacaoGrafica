@@ -2,7 +2,7 @@
 
 DirtBlock::DirtBlock(unsigned int texture) {
   textureId = texture;
-  // Todas as faces usam o tile 2 (terra) no atlas.
+  // tudo tile 2 = terra
   faceTiles = {2, 2, 2, 2, 2, 2};
 }
 
