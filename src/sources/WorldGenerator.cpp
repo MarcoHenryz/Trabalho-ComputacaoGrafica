@@ -1,30 +1,91 @@
 #include "../headers/WorldGenerator.hpp"
+#include <string>
 
-WorldGenerator::WorldIslands WorldGenerator::GenerateTwoIslands() const {
-  WorldIslands islands;
+WorldGenerator::CustomMatrix3D WorldGenerator::GenerateCustomMatrix() const {
+  CustomMatrix3D layout;
 
-  auto addFlatIsland = [](std::vector<glm::vec3> &target, const glm::vec3 &base,
-                          int size) {
-    for (int x = 0; x < size; ++x)
-      for (int z = 0; z < size; ++z)
-        target.emplace_back(base.x + static_cast<float>(x), base.y,
-                            base.z + static_cast<float>(z));
+  // formato da ilha
+  const char *map[] = {
+      "   BBBBB   ",
+      "  BBBBBBB  ",
+      " BBBBBBBBB ",
+      "BBBBBBBBBB ",
+      " BBBBBBBBB ",
+      "  BBBBBBB  ",
+      "   BBBBB   ",
   };
 
-  // exemplo de grama
-  addFlatIsland(islands.grassBlocks, glm::vec3(-4.0f, -2.0f, -4.0f), 3);
+  // centro mais ou menos
+  const float originX = -5.0f;
+  const float originZ = -5.0f;
 
-  // exemplo de terra
-  addFlatIsland(islands.dirtBlocks, glm::vec3(3.0f, -2.0f, 3.0f), 3);
+  const int rows = static_cast<int>(sizeof(map) / sizeof(map[0]));
 
-  // exemplo de pedra
-  addFlatIsland(islands.stoneBlocks, glm::vec3(-8.0f, -2.0f, 6.0f), 3);
+  // formato aesthetic de gota
+  std::vector<std::string> grassMask;
+  grassMask.reserve(rows);
+  for (int i = 0; i < rows; ++i)
+    grassMask.emplace_back(map[i]);
 
-  // exemplo tronco
-  addFlatIsland(islands.woodBlocks, glm::vec3(6.0f, -2.0f, -6.0f), 3);
+  auto shrinkMask = [](std::vector<std::string> mask) {
+    for (size_t i = 0; i < mask.size(); ++i) {
+      std::string &row = mask[i];
+      const auto first = row.find('B');
+      const auto last = row.rfind('B');
+      if (first != std::string::npos)
+        row[first] = ' ';
+      if (last != std::string::npos)
+        row[last] = ' ';
+      if (i == 0 || i + 1 == mask.size()) {
+        for (char &c : row)
+          if (c == 'B')
+            c = ' ';
+      }
+    }
+    return mask;
+  };
 
-  // exemplo folhas
-  addFlatIsland(islands.leafBlocks, glm::vec3(0.0f, -2.0f, 8.0f), 3);
+  auto applyLayer = [&](const std::vector<std::string> &mask, float y,
+                        std::vector<glm::vec3> &target) {
+    for (int z = 0; z < static_cast<int>(mask.size()); ++z) {
+      const std::string &row = mask[z];
+      for (int x = 0; x < static_cast<int>(row.size()); ++x) {
+        if (row[x] != 'B')
+          continue;
+        target.emplace_back(originX + static_cast<float>(x), y,
+                            originZ + static_cast<float>(z));
+      }
+    }
+  };
 
-  return islands;
+  auto dirtMask = shrinkMask(grassMask);
+  auto stoneMask1 = shrinkMask(dirtMask);
+  auto stoneMask2 = shrinkMask(stoneMask1);
+
+  // camadas: pedra menor embaixo, depois terra, depois grama
+  const float baseY = -4.0f; // desço tudo pra câmera não nascer colada
+  applyLayer(stoneMask2, baseY - 1.0f, layout.stoneBlocks);
+  applyLayer(stoneMask1, baseY, layout.stoneBlocks);
+  applyLayer(dirtMask, baseY + 1.0f, layout.dirtBlocks);
+  applyLayer(grassMask, baseY + 2.0f, layout.grassBlocks);
+
+  // árvore bonitinha no canto
+  const glm::vec3 treeBase(originX + 2.0f, baseY + 2.0f, originZ + 3.0f);
+  for (int y = 0; y < 4; ++y)
+    layout.woodBlocks.emplace_back(treeBase.x, treeBase.y + y, treeBase.z);
+
+  // folhas padrão minecraft
+  for (int y = 3; y <= 4; ++y) {
+    for (int dx = -2; dx <= 2; ++dx) {
+      for (int dz = -2; dz <= 2; ++dz) {
+        const bool isEdge = std::abs(dx) == 2 || std::abs(dz) == 2;
+        if (y == 4 && isEdge)
+          continue;
+        layout.leafBlocks.emplace_back(treeBase.x + dx, treeBase.y + y,
+                                       treeBase.z + dz);
+      }
+    }
+  }
+
+  return layout;
 }

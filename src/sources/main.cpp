@@ -74,7 +74,7 @@ int main() {
   WorldGenerator worldGenerator;
   
   // blocos exemplo
-  auto islands = worldGenerator.GenerateTwoIslands();
+  auto layout = worldGenerator.GenerateCustomMatrix();
 
   TextureLoader textureLoader;
   unsigned int atlasTexture = textureLoader.LoadAtlasTexture();
@@ -85,11 +85,11 @@ int main() {
   StoneBlock stoneBlock(atlasTexture);
   WoodBlock woodBlock(atlasTexture);
   LeafBlock leafBlock(atlasTexture);
-  Chunk grassChunk(islands.grassBlocks, grassBlock);
-  Chunk dirtChunk(islands.dirtBlocks, dirtBlock);
-  Chunk stoneChunk(islands.stoneBlocks, stoneBlock);
-  Chunk woodChunk(islands.woodBlocks, woodBlock);
-  Chunk leafChunk(islands.leafBlocks, leafBlock);
+  Chunk grassChunk(layout.grassBlocks, grassBlock);
+  Chunk dirtChunk(layout.dirtBlocks, dirtBlock);
+  Chunk stoneChunk(layout.stoneBlocks, stoneBlock);
+  Chunk woodChunk(layout.woodBlocks, woodBlock);
+  Chunk leafChunk(layout.leafBlocks, leafBlock);
 
   // setar texture de cada sampler
   shader.use();

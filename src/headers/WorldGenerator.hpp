@@ -6,7 +6,7 @@
 
 class WorldGenerator {
 public:
-  struct WorldIslands {
+  struct CustomMatrix3D {
     std::vector<glm::vec3> grassBlocks;
     std::vector<glm::vec3> dirtBlocks;
     std::vector<glm::vec3> stoneBlocks;
@@ -14,7 +14,7 @@ public:
     std::vector<glm::vec3> leafBlocks;
   };
 
-  WorldIslands GenerateTwoIslands() const;
+  CustomMatrix3D GenerateCustomMatrix() const;
 };
 
 #endif
