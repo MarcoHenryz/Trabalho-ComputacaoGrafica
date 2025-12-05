@@ -63,10 +63,13 @@ int main() {
 
   Light light;
   light.SetupSunLight();
+  light.InitShadowMap();
 
   // compilar e linkar shaders
   Shader shader("src/resources/shaders/shader.vs",
                 "src/resources/shaders/shader.fs");
+  Shader depthShader("src/resources/shaders/depth_dir.vs",
+                     "src/resources/shaders/depth_dir.fs");
 
   Renderer renderer;
   renderer.Initialize();
@@ -91,18 +94,41 @@ int main() {
   Chunk woodChunk(layout.woodBlocks, woodBlock);
   Chunk leafChunk(layout.leafBlocks, leafBlock);
 
-  // setar texture de cada sampler
+  // setar textura e luz (sol direcional com shadow map)
   shader.use();
   shader.setInt("block_texture", 0);
+  shader.setInt("shadowMap", 1);
+  light.ApplyToShader(shader.ID);
+  shader.setMat4("lightSpaceMatrix", light.GetLightSpaceMatrix());
 
   // loop principal
   while (!glfwWindowShouldClose(window)) {
     player.UpdateFrameTime();
     player.ProcessInput(window);
 
-    // render
-    glClearColor(0.53f, 0.81f, 0.92f, 1.0f);
+  // primeira passada: gerar shadow map do ponto de vista da luz
+  light.BeginShadowPass();
+  depthShader.use();
+  depthShader.setMat4("lightSpaceMatrix", light.GetLightSpaceMatrix());
+  renderer.RenderDepth(grassChunk.GetBlockPositions(), depthShader);
+  renderer.RenderDepth(dirtChunk.GetBlockPositions(), depthShader);
+    renderer.RenderDepth(stoneChunk.GetBlockPositions(), depthShader);
+    renderer.RenderDepth(woodChunk.GetBlockPositions(), depthShader);
+    renderer.RenderDepth(leafChunk.GetBlockPositions(), depthShader);
+    light.EndShadowPass();
+
+    // render normal
+    int fbWidth = 0, fbHeight = 0;
+    glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+    glViewport(0, 0, fbWidth, fbHeight); // garante que preenche a janela inteira
+    glClearColor(0.35f, 0.55f, 0.85f, 1.0f); // céu mais suave
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    shader.use();
+    shader.setMat4("lightSpaceMatrix", light.GetLightSpaceMatrix());
+    light.ApplyToShader(shader.ID);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, light.GetDepthMap());
 
     renderer.Render(grassChunk.GetBlockPositions(), grassChunk.GetBlockType(),
                     shader, player.GetCamera(), SCR_WIDTH, SCR_HEIGHT);

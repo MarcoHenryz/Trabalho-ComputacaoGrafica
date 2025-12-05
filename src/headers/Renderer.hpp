@@ -17,6 +17,7 @@ public:
   void Render(const std::vector<glm::vec3> &cubePositions, const Block &block,
               Shader &shader, const Camera &camera,
               unsigned int screenWidth, unsigned int screenHeight);
+  void RenderDepth(const std::vector<glm::vec3> &cubePositions, Shader &shader);
   void Cleanup();
 
   static void FramebufferSizeCallback(GLFWwindow *window, int width,

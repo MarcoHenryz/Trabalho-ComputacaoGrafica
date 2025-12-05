@@ -169,3 +169,16 @@ void Renderer::SetupBuffers() {
 
   glBindVertexArray(0);
 }
+
+void Renderer::RenderDepth(const std::vector<glm::vec3> &cubePositions,
+                           Shader &shader) {
+  shader.use();
+  glBindVertexArray(VAO);
+  for (const auto &cubePosition : cubePositions) {
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, cubePosition);
+    shader.setMat4("model", model);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+  }
+  glBindVertexArray(0);
+}
