@@ -14,6 +14,8 @@ uniform mat4 projection;
 uniform vec2 faceOffsets[6];  // canto inferior esquerdo do tile da face
 uniform vec2 faceScales[6];   // largura/altura em UV do tile da face
 uniform mat4 lightSpaceMatrix;
+uniform float time;
+uniform int leafBlock;
 
 const vec3 FACE_NORMALS[6] = vec3[6](
     vec3(0.0, 0.0, -1.0), // back
@@ -26,7 +28,15 @@ const vec3 FACE_NORMALS[6] = vec3[6](
 
 void main()
 {
-    vec4 worldPos = model * vec4(aPos, 1.0);
+    vec3 pos = aPos;
+    if (leafBlock == 1) {
+        // balanço mais visível das folhas, vento fixo pra esquerda-frente
+        vec3 windDir = normalize(vec3(0.7, 0.0, 0.4));
+        float sway = sin(time * 2.0 + aPos.x + aPos.z) * 0.05;
+        pos += windDir * sway;
+    }
+
+    vec4 worldPos = model * vec4(pos, 1.0);
     gl_Position = projection * view * worldPos;
 
     int faceIndex = int(aFaceId + 0.5);

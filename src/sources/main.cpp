@@ -106,14 +106,18 @@ int main() {
     player.UpdateFrameTime();
     player.ProcessInput(window);
 
-  // primeira passada: gerar shadow map do ponto de vista da luz
-  light.BeginShadowPass();
-  depthShader.use();
-  depthShader.setMat4("lightSpaceMatrix", light.GetLightSpaceMatrix());
-  renderer.RenderDepth(grassChunk.GetBlockPositions(), depthShader);
-  renderer.RenderDepth(dirtChunk.GetBlockPositions(), depthShader);
+    // primeira passada: gerar shadow map do ponto de vista da luz
+    light.BeginShadowPass();
+    depthShader.use();
+    depthShader.setFloat("time", static_cast<float>(glfwGetTime()));
+    depthShader.setMat4("lightSpaceMatrix", light.GetLightSpaceMatrix());
+    // cada tipo avisa se é folha pra balançar
+    depthShader.setInt("leafBlock", 0);
+    renderer.RenderDepth(grassChunk.GetBlockPositions(), depthShader);
+    renderer.RenderDepth(dirtChunk.GetBlockPositions(), depthShader);
     renderer.RenderDepth(stoneChunk.GetBlockPositions(), depthShader);
     renderer.RenderDepth(woodChunk.GetBlockPositions(), depthShader);
+    depthShader.setInt("leafBlock", 1);
     renderer.RenderDepth(leafChunk.GetBlockPositions(), depthShader);
     light.EndShadowPass();
 
@@ -125,6 +129,7 @@ int main() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     shader.use();
+    shader.setFloat("time", static_cast<float>(glfwGetTime()));
     shader.setMat4("lightSpaceMatrix", light.GetLightSpaceMatrix());
     light.ApplyToShader(shader.ID);
     glActiveTexture(GL_TEXTURE1);

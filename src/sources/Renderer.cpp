@@ -97,6 +97,8 @@ void Renderer::Render(const std::vector<glm::vec3> &cubePositions,
   glBindTexture(GL_TEXTURE_2D, block.GetTextureId());
 
   shader.use();
+  // flag pra balançar só as folhas
+  shader.setInt("leafBlock", block.GetName() == "leaf" ? 1 : 0);
 
   // Aqui escolho a fatia do atlas para cada face, dependendo do bloco.
   const auto &faces = block.GetFaceTileIndices();
@@ -173,6 +175,7 @@ void Renderer::SetupBuffers() {
 void Renderer::RenderDepth(const std::vector<glm::vec3> &cubePositions,
                            Shader &shader) {
   shader.use();
+  // não tem atlas aqui, só preciso dizer se é folha pra balançar
   glBindVertexArray(VAO);
   for (const auto &cubePosition : cubePositions) {
     glm::mat4 model = glm::mat4(1.0f);
