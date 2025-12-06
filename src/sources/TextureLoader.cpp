@@ -5,7 +5,8 @@
 #include <string>
 #include <array>
 
-unsigned int TextureLoader::LoadAtlasTexture() const {
+unsigned int TextureLoader::LoadAtlasTexture() const
+{
   unsigned int atlasTexture = 0;
 
   glGenTextures(1, &atlasTexture);
@@ -29,15 +30,19 @@ unsigned int TextureLoader::LoadAtlasTexture() const {
   unsigned char *data = nullptr;
   std::string loadedPath;
   data = stbi_load(path.c_str(), &width, &height, &channels, 0);
-  if (data) {
+  if (data)
+  {
     loadedPath = path;
   }
 
-  if (!data) {
+  if (!data)
+  {
     std::cout << "Erro ao carregar textura! "
               << path << "\n"
               << ")\nMotivo: " << stbi_failure_reason() << std::endl;
-  } else {
+  }
+  else
+  {
     GLenum format = channels == 4 ? GL_RGBA : GL_RGB;
     glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format,
                  GL_UNSIGNED_BYTE, data);

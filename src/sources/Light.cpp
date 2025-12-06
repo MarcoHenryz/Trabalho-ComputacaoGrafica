@@ -4,7 +4,8 @@
 
 Light::Light() = default;
 
-void Light::SetupSunLight() {
+void Light::SetupSunLight()
+{
   // luz direcional inclinada ~75 graus (sol bem alto)
   direction = glm::normalize(glm::vec3(0.3f, -1.0f, 0.3f));
   color = glm::vec3(1.0f, 0.95f, 0.85f);
@@ -20,7 +21,8 @@ void Light::SetupSunLight() {
   lightSpaceMatrix = lightProjection * lightView;
 }
 
-void Light::InitShadowMap() {
+void Light::InitShadowMap()
+{
   // FBO só de profundidade para o shadow map
   glGenFramebuffers(1, &depthMapFBO);
   glGenTextures(1, &depthMap);
@@ -44,7 +46,8 @@ void Light::InitShadowMap() {
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void Light::BeginShadowPass() {
+void Light::BeginShadowPass()
+{
   glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
   glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
   glClear(GL_DEPTH_BUFFER_BIT);
@@ -52,7 +55,8 @@ void Light::BeginShadowPass() {
 
 void Light::EndShadowPass() { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
 
-void Light::ApplyToShader(unsigned int shaderID) const {
+void Light::ApplyToShader(unsigned int shaderID) const
+{
   // seta uniforms básicos no pass normal
   glUniform3fv(glGetUniformLocation(shaderID, "lightDir"), 1, &direction[0]);
   glUniform3fv(glGetUniformLocation(shaderID, "lightColor"), 1, &color[0]);

@@ -10,7 +10,8 @@ const float ZOOM = 45.0f;
 // construtor com vectors
 Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch)
     : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED),
-      MouseSensitivity(SENSITIVITY), Zoom(ZOOM) {
+      MouseSensitivity(SENSITIVITY), Zoom(ZOOM)
+{
   Position = position;
   WorldUp = up;
   Yaw = yaw;
@@ -22,7 +23,8 @@ Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch)
 Camera::Camera(float posX, float posY, float posZ, float upX, float upY,
                float upZ, float yaw, float pitch)
     : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED),
-      MouseSensitivity(SENSITIVITY), Zoom(ZOOM) {
+      MouseSensitivity(SENSITIVITY), Zoom(ZOOM)
+{
   Position = glm::vec3(posX, posY, posZ);
   WorldUp = glm::vec3(upX, upY, upZ);
   Yaw = yaw;
@@ -31,12 +33,14 @@ Camera::Camera(float posX, float posY, float posZ, float upX, float upY,
 }
 
 // retorna a view matrix calculada com angulos de euler + matrix lookat
-glm::mat4 Camera::GetViewMatrix() const {
+glm::mat4 Camera::GetViewMatrix() const
+{
   return glm::lookAt(Position, Position + Front, Up);
 }
 
 // enum de input de teclado para movimentação
-void Camera::ProcessKeyboard(Camera_Movement direction, float deltaTime) {
+void Camera::ProcessKeyboard(Camera_Movement direction, float deltaTime)
+{
   float velocity = MovementSpeed * deltaTime;
   if (direction == FORWARD)
     Position += Front * velocity;
@@ -49,7 +53,8 @@ void Camera::ProcessKeyboard(Camera_Movement direction, float deltaTime) {
 }
 
 void Camera::ProcessMouseMovement(float xoffset, float yoffset,
-                                  GLboolean constrainPitch) {
+                                  GLboolean constrainPitch)
+{
   xoffset *= MouseSensitivity;
   yoffset *= MouseSensitivity;
 
@@ -57,7 +62,8 @@ void Camera::ProcessMouseMovement(float xoffset, float yoffset,
   Pitch += yoffset;
 
   // não deixa a camera virar de ponta cabeça
-  if (constrainPitch) {
+  if (constrainPitch)
+  {
     if (Pitch > 89.0f)
       Pitch = 89.0f;
     if (Pitch < -89.0f)
@@ -67,7 +73,8 @@ void Camera::ProcessMouseMovement(float xoffset, float yoffset,
   Camera::updateCameraVectors();
 }
 
-void Camera::ProcessMouseScroll(float yoffset) {
+void Camera::ProcessMouseScroll(float yoffset)
+{
   Zoom -= (float)yoffset;
   if (Zoom < 1.0f)
     Zoom = 1.0f;
@@ -76,7 +83,8 @@ void Camera::ProcessMouseScroll(float yoffset) {
 }
 
 // calcula front vector atualizado da câmera
-void Camera::updateCameraVectors() {
+void Camera::updateCameraVectors()
+{
   glm::vec3 front;
   front.x = cos(glm::radians(Yaw)) * cos(glm::radians(Pitch));
   front.y = sin(glm::radians(Pitch));

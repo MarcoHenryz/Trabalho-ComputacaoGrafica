@@ -1,11 +1,13 @@
 #include "../headers/glad/glad.h"
 #include "../headers/glm/glm.hpp"
+#include "../headers/glm/gtc/matrix_transform.hpp"
 #include <GL/gl.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <string>
+#include <vector>
 
 #include "../headers/Camera.hpp"
-#include "../headers/Chunk.hpp"
 #include "../headers/DirtBlock.hpp"
 #include "../headers/GrassBlock.hpp"
 #include "../headers/Light.hpp"
@@ -22,7 +24,8 @@
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
-int main() {
+int main()
+{
   // inicializar glfw
   glfwInit();
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -36,7 +39,8 @@ int main() {
   // criar janela glfw
   GLFWwindow *window =
       glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Block Sandbox", NULL, NULL);
-  if (window == NULL) {
+  if (window == NULL)
+  {
     std::cout << "Erro ao criar janela GLFW" << std::endl;
     glfwTerminate();
     return -1;
@@ -51,7 +55,8 @@ int main() {
   glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
   // glad: carregar todos os ponteiros de função OpenGL
-  if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+  if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+  {
     std::cout << "Falha ao inicializar GLAD" << std::endl;
     return -1;
   }
@@ -70,12 +75,32 @@ int main() {
                 "src/resources/shaders/shader.fs");
   Shader depthShader("src/resources/shaders/depth_dir.vs",
                      "src/resources/shaders/depth_dir.fs");
+  Shader crosshairShader("src/resources/shaders/crosshair.vs",
+                         "src/resources/shaders/crosshair.fs");
+
+  // crosshair simples no centro da tela
+  unsigned int crossVAO = 0, crossVBO = 0;
+  {
+    const float crossVerts[] = {
+        -0.02f, 0.0f, 0.02f, 0.0f, // linha horizontal
+        0.0f, -0.02f, 0.0f, 0.02f  // linha vertical
+    };
+    glGenVertexArrays(1, &crossVAO);
+    glGenBuffers(1, &crossVBO);
+    glBindVertexArray(crossVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, crossVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(crossVerts), crossVerts, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float),
+                          (void *)0);
+    glEnableVertexAttribArray(0);
+    glBindVertexArray(0);
+  }
 
   Renderer renderer;
   renderer.Initialize();
 
   WorldGenerator worldGenerator;
-  
+
   // blocos exemplo
   auto layout = worldGenerator.GenerateCustomMatrix();
 
@@ -88,11 +113,13 @@ int main() {
   StoneBlock stoneBlock(atlasTexture);
   WoodBlock woodBlock(atlasTexture);
   LeafBlock leafBlock(atlasTexture);
-  Chunk grassChunk(layout.grassBlocks, grassBlock);
-  Chunk dirtChunk(layout.dirtBlocks, dirtBlock);
-  Chunk stoneChunk(layout.stoneBlocks, stoneBlock);
-  Chunk woodChunk(layout.woodBlocks, woodBlock);
-  Chunk leafChunk(layout.leafBlocks, leafBlock);
+  BlockCollection grassSet{&layout.grassBlocks, &grassBlock};
+  BlockCollection dirtSet{&layout.dirtBlocks, &dirtBlock};
+  BlockCollection stoneSet{&layout.stoneBlocks, &stoneBlock};
+  BlockCollection woodSet{&layout.woodBlocks, &woodBlock};
+  BlockCollection leafSet{&layout.leafBlocks, &leafBlock};
+  std::vector<BlockCollection> allBlocks = {grassSet, dirtSet, stoneSet,
+                                            woodSet, leafSet};
 
   // setar textura e luz (sol direcional com shadow map)
   shader.use();
@@ -102,49 +129,90 @@ int main() {
   shader.setMat4("lightSpaceMatrix", light.GetLightSpaceMatrix());
 
   // loop principal
-  while (!glfwWindowShouldClose(window)) {
+  bool leftMouseWasDown = false;
+  while (!glfwWindowShouldClose(window))
+  {
     player.UpdateFrameTime();
     player.ProcessInput(window);
+    float timeNow = static_cast<float>(glfwGetTime());
+
+    // clique para quebrar bloco (raycast fica no player)
+    int leftState = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
+    if (leftState == GLFW_PRESS && !leftMouseWasDown)
+    {
+      glm::vec3 hitPos{0.0f};
+      size_t hitIndex = 0;
+      if (player.PickBlock(allBlocks, hitPos, hitIndex))
+      {
+        Player::RemoveBlockAt(*allBlocks[hitIndex].positions, hitPos);
+      }
+    }
+    leftMouseWasDown = (leftState == GLFW_PRESS);
 
     // primeira passada: gerar shadow map do ponto de vista da luz
     light.BeginShadowPass();
     depthShader.use();
-    depthShader.setFloat("time", static_cast<float>(glfwGetTime()));
+    depthShader.setFloat("time", timeNow);
     depthShader.setMat4("lightSpaceMatrix", light.GetLightSpaceMatrix());
-    // cada tipo avisa se é folha pra balançar
+
+    // balança se for folha
     depthShader.setInt("leafBlock", 0);
-    renderer.RenderDepth(grassChunk.GetBlockPositions(), depthShader);
-    renderer.RenderDepth(dirtChunk.GetBlockPositions(), depthShader);
-    renderer.RenderDepth(stoneChunk.GetBlockPositions(), depthShader);
-    renderer.RenderDepth(woodChunk.GetBlockPositions(), depthShader);
+    renderer.RenderDepth(*grassSet.positions, depthShader);
+    renderer.RenderDepth(*dirtSet.positions, depthShader);
+    renderer.RenderDepth(*stoneSet.positions, depthShader);
+    renderer.RenderDepth(*woodSet.positions, depthShader);
     depthShader.setInt("leafBlock", 1);
-    renderer.RenderDepth(leafChunk.GetBlockPositions(), depthShader);
+    renderer.RenderDepth(*leafSet.positions, depthShader);
     light.EndShadowPass();
 
     // render normal
     int fbWidth = 0, fbHeight = 0;
     glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
-    glViewport(0, 0, fbWidth, fbHeight); // garante que preenche a janela inteira
+    glViewport(0, 0, fbWidth, fbHeight);     // usa o tamanho real do framebuffer pra não esticar
     glClearColor(0.35f, 0.55f, 0.85f, 1.0f); // céu mais suave
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     shader.use();
-    shader.setFloat("time", static_cast<float>(glfwGetTime()));
+    shader.setFloat("time", timeNow);
     shader.setMat4("lightSpaceMatrix", light.GetLightSpaceMatrix());
     light.ApplyToShader(shader.ID);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, light.GetDepthMap());
 
-    renderer.Render(grassChunk.GetBlockPositions(), grassChunk.GetBlockType(),
-                    shader, player.GetCamera(), SCR_WIDTH, SCR_HEIGHT);
-    renderer.Render(dirtChunk.GetBlockPositions(), dirtChunk.GetBlockType(),
-                    shader, player.GetCamera(), SCR_WIDTH, SCR_HEIGHT);
-    renderer.Render(stoneChunk.GetBlockPositions(), stoneChunk.GetBlockType(),
-                    shader, player.GetCamera(), SCR_WIDTH, SCR_HEIGHT);
-    renderer.Render(woodChunk.GetBlockPositions(), woodChunk.GetBlockType(),
-                    shader, player.GetCamera(), SCR_WIDTH, SCR_HEIGHT);
-    renderer.Render(leafChunk.GetBlockPositions(), leafChunk.GetBlockType(),
-                    shader, player.GetCamera(), SCR_WIDTH, SCR_HEIGHT);
+    // passa o tamanho atual pra manter proporção (só aumenta campo de visão se a janela for maior)
+    // manter proporção, não distorce tudo com o tamanho
+    renderer.Render(*grassSet.positions, *grassSet.block, shader,
+                    player.GetCamera(), fbWidth, fbHeight);
+    renderer.Render(*dirtSet.positions, *dirtSet.block, shader,
+                    player.GetCamera(), fbWidth, fbHeight);
+    renderer.Render(*stoneSet.positions, *stoneSet.block, shader,
+                    player.GetCamera(), fbWidth, fbHeight);
+    renderer.Render(*woodSet.positions, *woodSet.block, shader,
+                    player.GetCamera(), fbWidth, fbHeight);
+    renderer.Render(*leafSet.positions, *leafSet.block, shader,
+                    player.GetCamera(), fbWidth, fbHeight);
+
+    // crosshair 2D no centro
+    glDisable(GL_DEPTH_TEST);
+    crosshairShader.use();
+    crosshairShader.setVec3("color", glm::vec3(1.0f, 1.0f, 1.0f));
+    glBindVertexArray(crossVAO);
+
+    // ajusta com aspect ratio pra manter o + simétrico em qualquer resolução
+    float aspect = static_cast<float>(fbWidth) / static_cast<float>(fbHeight);
+    if (aspect >= 1.0f)
+    {
+      glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f / aspect, 1.0f, 1.0f));
+      crosshairShader.setMat4("projection", scale);
+    }
+    else
+    {
+      glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, aspect, 1.0f));
+      crosshairShader.setMat4("projection", scale);
+    }
+    glDrawArrays(GL_LINES, 0, 4);
+    glBindVertexArray(0);
+    glEnable(GL_DEPTH_TEST);
 
     // glfw: swap buffers e IO
     glfwSwapBuffers(window);
@@ -153,6 +221,8 @@ int main() {
 
   // limpar recursos para encerrar
   renderer.Cleanup();
+  glDeleteVertexArrays(1, &crossVAO);
+  glDeleteBuffers(1, &crossVBO);
 
   // encerra glfw de vez
   glfwTerminate();

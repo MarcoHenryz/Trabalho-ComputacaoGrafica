@@ -3,85 +3,88 @@
 #include "../headers/glm/gtc/matrix_transform.hpp"
 #include <string>
 
-namespace {
-// Atlas 80x32, cada face 16x16
-// grama cima   - grama lado   - terra  - pedra lisa - nada
-// madeira lado - madeira cima - folhas - carvão     - nada
-constexpr float ATLAS_W = 80.0f;
-constexpr float ATLAS_H = 32.0f;
-constexpr float TILE_W_PX = 16.0f;
-constexpr float TILE_H_PX = 16.0f;
+namespace
+{
+  // Atlas 80x32, cada face 16x16
+  // grama cima   - grama lado   - terra  - pedra lisa - nada
+  // madeira lado - madeira cima - folhas - carvão     - nada
+  constexpr float ATLAS_W = 80.0f;
+  constexpr float ATLAS_H = 32.0f;
+  constexpr float TILE_W_PX = 16.0f;
+  constexpr float TILE_H_PX = 16.0f;
 
-struct RegionUV {
-  glm::vec2 min;
-  glm::vec2 max;
-};
+  struct RegionUV
+  {
+    glm::vec2 min;
+    glm::vec2 max;
+  };
 
-RegionUV RegionForTile(int tileIndex) {
-  const int col = tileIndex % 5;
-  const int row = tileIndex / 5;
-  const float left = col * TILE_W_PX;
-  const float top = row * TILE_H_PX;
-  const float right = left + TILE_W_PX;
-  const float bottom = top + TILE_H_PX;
+  RegionUV RegionForTile(int tileIndex)
+  {
+    const int col = tileIndex % 5;
+    const int row = tileIndex / 5;
+    const float left = col * TILE_W_PX;
+    const float top = row * TILE_H_PX;
+    const float right = left + TILE_W_PX;
+    const float bottom = top + TILE_H_PX;
 
-  const float u0 = left / ATLAS_W;
-  const float u1 = right / ATLAS_W;
-  const float v0 = 1.0f - (bottom / ATLAS_H); // origem em cima
-  const float v1 = 1.0f - (top / ATLAS_H);
+    const float u0 = left / ATLAS_W;
+    const float u1 = right / ATLAS_W;
+    const float v0 = 1.0f - (bottom / ATLAS_H); // origem em cima
+    const float v1 = 1.0f - (top / ATLAS_H);
 
-  return RegionUV{glm::vec2(u0, v0), glm::vec2(u1, v1)};
-}
+    return RegionUV{glm::vec2(u0, v0), glm::vec2(u1, v1)};
+  }
 
-// trás, frente, esquerda, direita, baixo, cima
-const float VERTICES[] = {
-    // trás (z -0.5) face 0
-    -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
-     0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
-     0.5f,  0.5f, -0.5f, 1.0f, 1.0f, 0.0f,
-     0.5f,  0.5f, -0.5f, 1.0f, 1.0f, 0.0f,
-    -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-    -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
+  // trás, frente, esquerda, direita, baixo, cima
+  const float VERTICES[] = {
+      // trás (z -0.5) face 0
+      -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
+      0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
+      0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 0.0f,
+      0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 0.0f,
+      -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+      -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
 
-    // frente (z +0.5) face 1
-    -0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
-     0.5f, -0.5f,  0.5f, 1.0f, 0.0f, 1.0f,
-     0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f,
-     0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f,
-    -0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 1.0f,
-    -0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
+      // frente (z +0.5) face 1
+      -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+      0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 1.0f,
+      0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 1.0f,
+      0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 1.0f,
+      -0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f,
+      -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
 
-    // esquerda (x -0.5) face 2
-    -0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 2.0f,
-    -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 2.0f,
-    -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 2.0f,
-    -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 2.0f,
-    -0.5f, -0.5f,  0.5f, 1.0f, 0.0f, 2.0f,
-    -0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 2.0f,
+      // esquerda (x -0.5) face 2
+      -0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 2.0f,
+      -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 2.0f,
+      -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 2.0f,
+      -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 2.0f,
+      -0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 2.0f,
+      -0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 2.0f,
 
-    // direita (x +0.5) face 3
-     0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 3.0f,
-     0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 3.0f,
-     0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 3.0f,
-     0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 3.0f,
-     0.5f, -0.5f,  0.5f, 1.0f, 0.0f, 3.0f,
-     0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 3.0f,
+      // direita (x +0.5) face 3
+      0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 3.0f,
+      0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 3.0f,
+      0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 3.0f,
+      0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 3.0f,
+      0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 3.0f,
+      0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 3.0f,
 
-    // baixo (y -0.5) face 4
-    -0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 4.0f,
-     0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 4.0f,
-     0.5f, -0.5f,  0.5f, 1.0f, 0.0f, 4.0f,
-     0.5f, -0.5f,  0.5f, 1.0f, 0.0f, 4.0f,
-    -0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 4.0f,
-    -0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 4.0f,
+      // baixo (y -0.5) face 4
+      -0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 4.0f,
+      0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 4.0f,
+      0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 4.0f,
+      0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 4.0f,
+      -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 4.0f,
+      -0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 4.0f,
 
-    // cima (y +0.5) face 5
-    -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 5.0f,
-     0.5f,  0.5f, -0.5f, 1.0f, 1.0f, 5.0f,
-     0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 5.0f,
-     0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 5.0f,
-    -0.5f,  0.5f,  0.5f, 0.0f, 0.0f, 5.0f,
-    -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 5.0f};
+      // cima (y +0.5) face 5
+      -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 5.0f,
+      0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 5.0f,
+      0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 5.0f,
+      0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 5.0f,
+      -0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 5.0f,
+      -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 5.0f};
 } // namespace
 
 Renderer::Renderer() : VBO(0), VAO(0) {}
@@ -92,7 +95,8 @@ void Renderer::Initialize() { SetupBuffers(); }
 
 void Renderer::Render(const std::vector<glm::vec3> &cubePositions,
                       const Block &block, Shader &shader, const Camera &camera,
-                      unsigned int screenWidth, unsigned int screenHeight) {
+                      unsigned int screenWidth, unsigned int screenHeight)
+{
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, block.GetTextureId());
 
@@ -102,7 +106,8 @@ void Renderer::Render(const std::vector<glm::vec3> &cubePositions,
 
   // Aqui escolho a fatia do atlas para cada face, dependendo do bloco.
   const auto &faces = block.GetFaceTileIndices();
-  for (size_t i = 0; i < faces.size(); ++i) {
+  for (size_t i = 0; i < faces.size(); ++i)
+  {
     const auto uv = RegionForTile(faces[i]);
     shader.setVec2("faceOffsets[" + std::to_string(i) + "]", uv.min);
     shader.setVec2("faceScales[" + std::to_string(i) + "]",
@@ -119,7 +124,8 @@ void Renderer::Render(const std::vector<glm::vec3> &cubePositions,
   shader.setMat4("view", view);
 
   glBindVertexArray(VAO);
-  for (const auto &cubePosition : cubePositions) {
+  for (const auto &cubePosition : cubePositions)
+  {
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, cubePosition);
     shader.setMat4("model", model);
@@ -128,24 +134,29 @@ void Renderer::Render(const std::vector<glm::vec3> &cubePositions,
   }
 }
 
-void Renderer::Cleanup() {
-  if (VAO != 0) {
+void Renderer::Cleanup()
+{
+  if (VAO != 0)
+  {
     glDeleteVertexArrays(1, &VAO);
     VAO = 0;
   }
-  if (VBO != 0) {
+  if (VBO != 0)
+  {
     glDeleteBuffers(1, &VBO);
     VBO = 0;
   }
 }
 
 void Renderer::FramebufferSizeCallback(GLFWwindow *window, int width,
-                                       int height) {
+                                       int height)
+{
   (void)window;
   glViewport(0, 0, width, height);
 }
 
-void Renderer::SetupBuffers() {
+void Renderer::SetupBuffers()
+{
   glGenVertexArrays(1, &VAO);
   glGenBuffers(1, &VBO);
 
@@ -173,11 +184,13 @@ void Renderer::SetupBuffers() {
 }
 
 void Renderer::RenderDepth(const std::vector<glm::vec3> &cubePositions,
-                           Shader &shader) {
+                           Shader &shader)
+{
   shader.use();
   // não tem atlas aqui, só preciso dizer se é folha pra balançar
   glBindVertexArray(VAO);
-  for (const auto &cubePosition : cubePositions) {
+  for (const auto &cubePosition : cubePositions)
+  {
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, cubePosition);
     shader.setMat4("model", model);

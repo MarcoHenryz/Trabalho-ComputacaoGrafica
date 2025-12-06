@@ -1,6 +1,7 @@
 #include "../headers/WoodBlock.hpp"
 
-WoodBlock::WoodBlock(unsigned int texture) {
+WoodBlock::WoodBlock(unsigned int texture)
+{
   textureId = texture;
   // trás, frente, esquerda, direita, baixo, cima
   // 5 = lado tronco, 6 = topo tronco
@@ -11,6 +12,7 @@ const std::string &WoodBlock::GetName() const { return name; }
 
 unsigned int WoodBlock::GetTextureId() const { return textureId; }
 
-const std::array<int, 6> &WoodBlock::GetFaceTileIndices() const {
+const std::array<int, 6> &WoodBlock::GetFaceTileIndices() const
+{
   return faceTiles;
 }

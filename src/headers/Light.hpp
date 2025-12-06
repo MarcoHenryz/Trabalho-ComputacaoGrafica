@@ -5,13 +5,14 @@
 #include "glad/glad.h"
 
 // luz direcional simples + shadow map 2D (sombra dura)
-class Light {
+class Light
+{
 public:
   Light();
-  void SetupSunLight();          // direção e matriz (~45 graus)
-  void InitShadowMap();          // cria FBO + textura de profundidade
-  void BeginShadowPass();        // bind do FBO e viewport do shadow
-  void EndShadowPass();          // volta pro framebuffer padrão
+  void SetupSunLight();                            // direção e matriz
+  void InitShadowMap();                            // cria FBO + textura de profundidade
+  void BeginShadowPass();                          // bind do FBO e viewport do shadow
+  void EndShadowPass();                            // volta pro framebuffer padrão
   void ApplyToShader(unsigned int shaderID) const; // seta uniforms no pass normal
 
   const glm::mat4 &GetLightSpaceMatrix() const { return lightSpaceMatrix; }
