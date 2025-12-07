@@ -20,13 +20,13 @@
 #include "../headers/WoodBlock.hpp"
 #include "../headers/LeafBlock.hpp"
 
-// settings
+// settings basicos de janela
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 int main()
 {
-  // inicializar glfw
+  // inicializar glfw (janela + contexto OpenGL)
   glfwInit();
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -78,7 +78,7 @@ int main()
   Shader crosshairShader("src/resources/shaders/crosshair.vs",
                          "src/resources/shaders/crosshair.fs");
 
-  // crosshair simples no centro da tela
+  // crosshair simples no centro da tela (2 linhas em NDC, ajustado pelo aspect)
   unsigned int crossVAO = 0, crossVBO = 0;
   {
     const float crossVerts[] = {
@@ -136,7 +136,7 @@ int main()
     player.ProcessInput(window);
     float timeNow = static_cast<float>(glfwGetTime());
 
-    // clique para quebrar bloco (raycast fica no player)
+    // clique para quebrar bloco (raycast fica no player): busca bloco mais próximo no raio de 12m
     int leftState = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
     if (leftState == GLFW_PRESS && !leftMouseWasDown)
     {
@@ -149,7 +149,7 @@ int main()
     }
     leftMouseWasDown = (leftState == GLFW_PRESS);
 
-    // primeira passada: gerar shadow map do ponto de vista da luz
+    // primeira passada: gerar shadow map do ponto de vista da luz (usa depthShader + sway das folhas)
     light.BeginShadowPass();
     depthShader.use();
     depthShader.setFloat("time", timeNow);
@@ -165,7 +165,7 @@ int main()
     renderer.RenderDepth(*leafSet.positions, depthShader);
     light.EndShadowPass();
 
-    // render normal
+    // render normal da cena
     int fbWidth = 0, fbHeight = 0;
     glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
     glViewport(0, 0, fbWidth, fbHeight);     // usa o tamanho real do framebuffer pra não esticar

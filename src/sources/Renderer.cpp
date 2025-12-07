@@ -87,11 +87,11 @@ namespace
       -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 5.0f};
 } // namespace
 
-Renderer::Renderer() : VBO(0), VAO(0) {}
+Renderer::Renderer() : VBO(0), VAO(0) {} // inicializa buffers zerados
 
 Renderer::~Renderer() { Cleanup(); }
 
-void Renderer::Initialize() { SetupBuffers(); }
+void Renderer::Initialize() { SetupBuffers(); } // cria VAO/VBO do cubo
 
 void Renderer::Render(const std::vector<glm::vec3> &cubePositions,
                       const Block &block, Shader &shader, const Camera &camera,
@@ -101,10 +101,10 @@ void Renderer::Render(const std::vector<glm::vec3> &cubePositions,
   glBindTexture(GL_TEXTURE_2D, block.GetTextureId());
 
   shader.use();
-  // flag pra balançar só as folhas
+  // flag pra balançar só as folhas (leafBlock == 1)
   shader.setInt("leafBlock", block.GetName() == "leaf" ? 1 : 0);
 
-  // Aqui escolho a fatia do atlas para cada face, dependendo do bloco.
+  // fatia do atlas por face, baseado no bloco atual
   const auto &faces = block.GetFaceTileIndices();
   for (size_t i = 0; i < faces.size(); ++i)
   {
@@ -114,6 +114,7 @@ void Renderer::Render(const std::vector<glm::vec3> &cubePositions,
                    uv.max - uv.min);
   }
 
+  // projeta com aspect atual (mantém proporção sem esticar)
   glm::mat4 projection = glm::perspective(
       glm::radians(camera.Zoom),
       static_cast<float>(screenWidth) / static_cast<float>(screenHeight), 0.1f,
@@ -134,7 +135,7 @@ void Renderer::Render(const std::vector<glm::vec3> &cubePositions,
   }
 }
 
-void Renderer::Cleanup()
+void Renderer::Cleanup() // limpa buffers OpenGL
 {
   if (VAO != 0)
   {
@@ -165,17 +166,17 @@ void Renderer::SetupBuffers()
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
   glBufferData(GL_ARRAY_BUFFER, sizeof(VERTICES), VERTICES, GL_STATIC_DRAW);
 
-  // posição
+  // posição do vértice (xyz)
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float),
                         (void *)0);
   glEnableVertexAttribArray(0);
 
-  // coordenada normalizada
+  // uv local (0..1) da face
   glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(float),
                         (void *)(3 * sizeof(float)));
   glEnableVertexAttribArray(1);
 
-  // id da face (0-5) para buscar no atlas
+  // id da face (0-5) para atlas e normal fixa
   glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float),
                         (void *)(5 * sizeof(float)));
   glEnableVertexAttribArray(2);
@@ -187,7 +188,7 @@ void Renderer::RenderDepth(const std::vector<glm::vec3> &cubePositions,
                            Shader &shader)
 {
   shader.use();
-  // não tem atlas aqui, só preciso dizer se é folha pra balançar
+  // shadow pass só model sem leafBlock
   glBindVertexArray(VAO);
   for (const auto &cubePosition : cubePositions)
   {

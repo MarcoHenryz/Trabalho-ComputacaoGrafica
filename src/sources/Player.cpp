@@ -71,20 +71,21 @@ bool Player::PickBlock(const std::vector<BlockCollection> &blocks,
                        glm::vec3 &hitPos, size_t &hitIndex,
                        float maxDistance) const
 {
+  // começa “não achei nada” e guarda o t mais curto no raio
   hitIndex = static_cast<size_t>(-1);
   float closestT = std::numeric_limits<float>::max();
-  glm::vec3 rayDir = glm::normalize(camera.Front);
+  glm::vec3 rayDir = glm::normalize(camera.Front); // direção do olhar
 
   for (size_t i = 0; i < blocks.size(); ++i)
   {
-    const auto *posList = blocks[i].positions;
-    for (const auto &pos : *posList)
+    const auto *posList = blocks[i].positions; // lista de blocos desse tipo
+    for (const auto &pos : *posList)          // percorre cada bloco
     {
-      glm::vec3 toBlock = pos - camera.Position;
-      float t = glm::dot(toBlock, rayDir);
+      glm::vec3 toBlock = pos - camera.Position; // vetor até o bloco
+      float t = glm::dot(toBlock, rayDir);       // projeção no raio
       if (t < 0.0f || t > maxDistance)
         continue;
-      // distância do bloco até o raio
+      // distância do bloco até o ponto mais próximo do raio
       glm::vec3 closest = camera.Position + rayDir * t;
       float dist = glm::length(closest - pos);
       if (dist < 0.6f && t < closestT)
@@ -102,6 +103,7 @@ bool Player::PickBlock(const std::vector<BlockCollection> &blocks,
 bool Player::RemoveBlockAt(std::vector<glm::vec3> &positions,
                            const glm::vec3 &worldPos)
 {
+  // remove o primeiro bloco cuja posição bate (epsilon pequeno)
   for (auto it = positions.begin(); it != positions.end(); ++it)
   {
     if (glm::all(glm::lessThan(glm::abs(*it - worldPos),

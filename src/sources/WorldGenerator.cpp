@@ -5,7 +5,7 @@ WorldGenerator::CustomMatrix3D WorldGenerator::GenerateCustomMatrix() const
 {
   CustomMatrix3D layout;
 
-  // formato da ilha
+  // formato da ilha (topo de grama em meia lua)
   const char *map[] = {
       "   BBBBB   ",
       "  BBBBBBB  ",
@@ -16,13 +16,12 @@ WorldGenerator::CustomMatrix3D WorldGenerator::GenerateCustomMatrix() const
       "   BBBBB   ",
   };
 
-  // centro mais ou menos
+  // offset pra posicionar no mundo
   const float originX = -5.0f;
   const float originZ = -5.0f;
 
   const int rows = static_cast<int>(sizeof(map) / sizeof(map[0]));
 
-  // formato aesthetic de gota
   std::vector<std::string> grassMask;
   grassMask.reserve(rows);
   for (int i = 0; i < rows; ++i)
@@ -30,6 +29,7 @@ WorldGenerator::CustomMatrix3D WorldGenerator::GenerateCustomMatrix() const
 
   auto shrinkMask = [](std::vector<std::string> mask)
   {
+    // afinando em todas as direções: tiro borda e aparo primeira/última linha
     for (size_t i = 0; i < mask.size(); ++i)
     {
       std::string &row = mask[i];
@@ -52,6 +52,7 @@ WorldGenerator::CustomMatrix3D WorldGenerator::GenerateCustomMatrix() const
   auto applyLayer = [&](const std::vector<std::string> &mask, float y,
                         std::vector<glm::vec3> &target)
   {
+    // percorre a máscara e joga blocos no y informado
     for (int z = 0; z < static_cast<int>(mask.size()); ++z)
     {
       const std::string &row = mask[z];

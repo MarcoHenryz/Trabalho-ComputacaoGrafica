@@ -6,7 +6,7 @@ Light::Light() = default;
 
 void Light::SetupSunLight()
 {
-  // luz direcional inclinada ~75 graus (sol bem alto)
+  // sol inclinado pra ficar dramático
   direction = glm::normalize(glm::vec3(0.3f, -1.0f, 0.3f));
   color = glm::vec3(1.0f, 0.95f, 0.85f);
   ambientStrength = 0.3f;
@@ -14,7 +14,8 @@ void Light::SetupSunLight()
   // projeção ortográfica cobre a ilha e a árvore (luz direcional usa ortho)
   lightProjection =
       glm::ortho(-25.0f, 25.0f, -15.0f, 25.0f, -10.0f, 40.0f);
-  // posiciono o “sol” longe olhando pro centro
+
+  // sol longe olhando pro centro
   glm::vec3 lightPos = -direction * 20.0f;
   lightView = glm::lookAt(lightPos, glm::vec3(0.0f, -4.0f, 0.0f),
                           glm::vec3(0.0f, 1.0f, 0.0f));
@@ -23,7 +24,7 @@ void Light::SetupSunLight()
 
 void Light::InitShadowMap()
 {
-  // FBO só de profundidade para o shadow map
+  // FBO só de profundidade para o shadow map (sombra dura, sem cor)
   glGenFramebuffers(1, &depthMapFBO);
   glGenTextures(1, &depthMap);
   glBindTexture(GL_TEXTURE_2D, depthMap);
@@ -48,6 +49,7 @@ void Light::InitShadowMap()
 
 void Light::BeginShadowPass()
 {
+  // direciona viewport e framebuffer para escrever profundidade do sol
   glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
   glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
   glClear(GL_DEPTH_BUFFER_BIT);
@@ -57,7 +59,7 @@ void Light::EndShadowPass() { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
 
 void Light::ApplyToShader(unsigned int shaderID) const
 {
-  // seta uniforms básicos no pass normal
+  // seta uniforms básicos no pass normal (direção, cor, força, matriz e sampler)
   glUniform3fv(glGetUniformLocation(shaderID, "lightDir"), 1, &direction[0]);
   glUniform3fv(glGetUniformLocation(shaderID, "lightColor"), 1, &color[0]);
   glUniform1f(glGetUniformLocation(shaderID, "ambientStrength"),
