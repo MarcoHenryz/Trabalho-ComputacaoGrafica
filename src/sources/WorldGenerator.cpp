@@ -1,99 +1,170 @@
 #include "../headers/WorldGenerator.hpp"
+#include <vector>
 #include <string>
 
 WorldGenerator::CustomMatrix3D WorldGenerator::GenerateCustomMatrix() const
 {
   CustomMatrix3D layout;
 
-  // formato da ilha (topo de grama em meia lua)
-  const char *map[] = {
-      "   BBBBB   ",
-      "  BBBBBBB  ",
-      " BBBBBBBBB ",
-      "BBBBBBBBBB ",
-      " BBBBBBBBB ",
-      "  BBBBBBB  ",
-      "   BBBBB   ",
-  };
+  // posição da ilha no mundo
+  float originX = -5.0f;
+  float originZ = -5.0f;
+  float minY    = -5.0f;
 
-  // offset pra posicionar no mundo
-  const float originX = -5.0f;
-  const float originZ = -5.0f;
+  // world[y][z][x]
+  // ' ' = vazio
+  // P = pedra, T = terra, G = grama, M = madeira, F = folha
+  std::vector<std::vector<std::string> > world;
 
-  const int rows = static_cast<int>(sizeof(map) / sizeof(map[0]));
+  // pontinha
+  world.push_back({
+      "           ",
+      "     P     ",
+      "    PPP    ",
+      "   PPPPP   ",
+      "    PPP    ",
+      "     P     ",
+      "           ",
+  });
 
-  std::vector<std::string> grassMask;
-  grassMask.reserve(rows);
-  for (int i = 0; i < rows; ++i)
-    grassMask.emplace_back(map[i]);
+  // pedra aumentando
+  world.push_back({
+      "     P     ",
+      "    PPP    ",
+      "   PPPPP   ",
+      "  PPPPPPP  ",
+      "   PPPPP   ",
+      "    PPP    ",
+      "     P     ",
+  });
 
-  auto shrinkMask = [](std::vector<std::string> mask)
+  // terra aumentando
+  world.push_back({
+      "    TTT    ",
+      "   TTTTT   ",
+      "  TTTTTTT  ",
+      " TTTTTTTTT ",
+      "  TTTTTTT  ",
+      "   TTTTT   ",
+      "    TTT    ",
+  });
+
+  // grama
+  world.push_back({
+      "   GGGGG   ",
+      "  GGGGGGG  ",
+      " GGGGGGGGG ",
+      "GGGGGGGGGGG",
+      " GGGGGGGGG ",
+      "  GGGGGGG  ",
+      "   GGGGG   ",
+  });
+
+  // tronco
+  world.push_back({
+      "           ",
+      "           ",
+      "           ",
+      "  M        ",
+      "           ",
+      "           ",
+      "           ",
+  });
+
+  // tronco
+  world.push_back({
+      "           ",
+      "           ",
+      "           ",
+      "  M        ",
+      "           ",
+      "           ",
+      "           ",
+  });
+
+  // tronco
+  world.push_back({
+      "           ",
+      "           ",
+      "           ",
+      "  M        ",
+      "           ",
+      "           ",
+      "           ",
+  });
+
+  // folhas maior
+  world.push_back({
+      "           ",
+      "FFFFF      ",
+      "FFFFF      ",
+      "FFMFF      ",
+      "FFFFF      ",
+      "FFFFF      ",
+      "           ",
+  });
+
+  // folhas medio
+  world.push_back({
+      "           ",
+      "           ",
+      " FFF       ",
+      " FFF       ",
+      " FFF       ",
+      "           ",
+      "           ",
+  });
+
+
+  // folhas topo
+  world.push_back({
+      "           ",
+      "           ",
+      "  F        ",
+      " FFF       ",
+      "  F        ",
+      "           ",
+      "           ",
+  });
+
+
+  // a partir daqui é só varrer as letras e jogar pro vetor certo
+  int height = world.size();
+  if (height == 0)
+    return layout;
+
+  int depth = world[0].size();       // z
+  int width = world[0][0].size();    // x
+
+  for (int iy = 0; iy < height; ++iy)
   {
-    // afinando em todas as direções: tiro borda e aparo primeira/última linha
-    for (size_t i = 0; i < mask.size(); ++i)
-    {
-      std::string &row = mask[i];
-      const auto first = row.find('B');
-      const auto last = row.rfind('B');
-      if (first != std::string::npos)
-        row[first] = ' ';
-      if (last != std::string::npos)
-        row[last] = ' ';
-      if (i == 0 || i + 1 == mask.size())
-      {
-        for (char &c : row)
-          if (c == 'B')
-            c = ' ';
-      }
-    }
-    return mask;
-  };
+    float y = minY + iy;
 
-  auto applyLayer = [&](const std::vector<std::string> &mask, float y,
-                        std::vector<glm::vec3> &target)
-  {
-    // percorre a máscara e joga blocos no y informado
-    for (int z = 0; z < static_cast<int>(mask.size()); ++z)
+    for (int iz = 0; iz < depth; ++iz)
     {
-      const std::string &row = mask[z];
-      for (int x = 0; x < static_cast<int>(row.size()); ++x)
+      const std::string &row = world[iy][iz];
+
+      for (int ix = 0; ix < width; ++ix)
       {
-        if (row[x] != 'B')
+        char c = row[ix];
+        if (c == ' ')
           continue;
-        target.emplace_back(originX + static_cast<float>(x), y,
-                            originZ + static_cast<float>(z));
-      }
-    }
-  };
 
-  auto dirtMask = shrinkMask(grassMask);
-  auto stoneMask1 = shrinkMask(dirtMask);
-  auto stoneMask2 = shrinkMask(stoneMask1);
+        float x = originX + ix;
+        float z = originZ + iz;
 
-  // camadas: pedra menor embaixo, depois terra, depois grama
-  const float baseY = -4.0f; // desço tudo pra câmera não nascer colada
-  applyLayer(stoneMask2, baseY - 1.0f, layout.stoneBlocks);
-  applyLayer(stoneMask1, baseY, layout.stoneBlocks);
-  applyLayer(dirtMask, baseY + 1.0f, layout.dirtBlocks);
-  applyLayer(grassMask, baseY + 2.0f, layout.grassBlocks);
+        glm::vec3 pos(x, y, z);
 
-  // árvore bonitinha no canto
-  const glm::vec3 treeBase(originX + 2.0f, baseY + 2.0f, originZ + 3.0f);
-  for (int y = 1; y < 4; ++y)
-    layout.woodBlocks.emplace_back(treeBase.x, treeBase.y + y, treeBase.z);
-
-  // folhas padrão minecraft
-  for (int y = 4; y <= 5; ++y)
-  {
-    for (int dx = -2; dx <= 2; ++dx)
-    {
-      for (int dz = -2; dz <= 2; ++dz)
-      {
-        const bool isEdge = std::abs(dx) == 2 || std::abs(dz) == 2;
-        if (y == 5 && isEdge)
-          continue;
-        layout.leafBlocks.emplace_back(treeBase.x + dx, treeBase.y + y,
-                                       treeBase.z + dz);
+        if (c == 'P')
+          layout.stoneBlocks.push_back(pos);
+        else if (c == 'T')
+          layout.dirtBlocks.push_back(pos);
+        else if (c == 'G')
+          layout.grassBlocks.push_back(pos);
+        else if (c == 'M')
+          layout.woodBlocks.push_back(pos);
+        else if (c == 'F')
+          layout.leafBlocks.push_back(pos);
       }
     }
   }
